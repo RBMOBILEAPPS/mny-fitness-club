@@ -4,7 +4,7 @@ const root=path.resolve('out');
 const basePath=process.env.NEXT_PUBLIC_BASE_PATH || '/mny-fitness-club';
 function localPath(url){
  if(!url.startsWith(basePath+'/'))throw Error(`Asset/link misses Pages base path: ${url}`);
- return url.slice(basePath.length);
+ return decodeURIComponent(url.slice(basePath.length));
 }
 const routes=['','about','facilities','classes','personal-training','membership','gallery','contact','blog','privacy','terms'];
 let links=0,assets=0;
@@ -27,8 +27,9 @@ for(const route of routes){
  }
  console.log(`PASS /${route} — heading, metadata, links, images`);
 }
-for(const file of fs.readdirSync(path.join(root,'_next/static/chunks')).filter(f=>f.endsWith('.css'))){
- const css=fs.readFileSync(path.join(root,'_next/static/chunks',file),'utf8');
+function walk(dir){return fs.readdirSync(dir,{withFileTypes:true}).flatMap(e=>e.isDirectory()?walk(path.join(dir,e.name)):[path.join(dir,e.name)])}
+for(const file of walk(path.join(root,'_next')).filter(f=>f.endsWith('.css'))){
+ const css=fs.readFileSync(file,'utf8');
  for(const [,url] of css.matchAll(/url\(["']?(\/[^)"']+)["']?\)/g)){
   if(!fs.existsSync(path.join(root,localPath(url))))throw Error(`Missing CSS asset: ${url}`);
  }
